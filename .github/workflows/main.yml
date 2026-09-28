@@ -1,0 +1,34 @@
+name: Build Earth 106 VST3 (Windows)
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Telecharger la police New Rocker (optionnel)
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          New-Item -ItemType Directory -Force Assets | Out-Null
+          Invoke-WebRequest -Uri "https://github.com/google/fonts/raw/main/ofl/newrocker/NewRocker-Regular.ttf" -OutFile "Assets/NewRocker-Regular.ttf"
+
+      - name: Configure
+        run: cmake -B build -G "Visual Studio 17 2022" -A x64
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Package
+        shell: pwsh
+        run: Compress-Archive -Path "build/Earth106_artefacts/Release/VST3/Earth 106.vst3" -DestinationPath "Earth106-v1.1-VST3-win64.zip"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Earth106-VST3-Windows
+          path: Earth106-v1.1-VST3-win64.zip
